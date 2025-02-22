@@ -9,40 +9,89 @@ const DINO_WIDTH = 20;
 const DINO_HEIGHT = 20;
 const GRAVITY = 1;
 const JUMP_FORCE = 15;
-const OBSTACLE_WIDTH = 10;
-const OBSTACLE_HEIGHT = 20;
+const OBSTACLE_SPEED = 2;
+const OBSTACLE_GAP_MIN = 100;
+const OBSTACLE_GAP_MAX = OBSTACLE_GAP_MIN * 3;
+
+type Obstacle = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  shape: "rect" | "circle" | "triangle";
+  color: string;
+};
+
+type Dino = {
+  x: number;
+  y: number;
+  vy: number;
+  onGround: boolean;
+};
+
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function createObstacles(): Obstacle[] {
+  const shapes: ("rect" | "circle" | "triangle")[] = ["rect", "circle", "triangle"];
+  const colors = ["red", "green", "blue"];
+  const obstacles: Obstacle[] = [];
+  let nextX = CANVAS_WIDTH;
+  for (let i = 0; i < shapes.length; i++) {
+    const gap = randomInt(OBSTACLE_GAP_MIN, OBSTACLE_GAP_MAX);
+    nextX += gap;
+    const width = randomInt(10, 25);
+    const height = randomInt(10, 30);
+    obstacles.push({ x: nextX, y: CANVAS_HEIGHT - height, width, height, shape: shapes[i], color: colors[i] });
+  }
+  return obstacles;
+}
 
 export default function DinoGame() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [dino, setDino] = useState({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true });
-  const [obstacle, setObstacle] = useState({ x: CANVAS_WIDTH + 100, y: CANVAS_HEIGHT - OBSTACLE_HEIGHT });
+  const [dino, setDino] = useState<Dino>({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true });
+  const [obstacles, setObstacles] = useState<Obstacle[]>(createObstacles());
   const [gameOver, setGameOver] = useState(false);
   const [paused, setPaused] = useState(false);
   const dinoRef = useRef(dino);
-  const obstacleRef = useRef(obstacle);
-
+  const obstaclesRef = useRef(obstacles);
   useEffect(() => { dinoRef.current = dino; }, [dino]);
-  useEffect(() => { obstacleRef.current = obstacle; }, [obstacle]);
+  useEffect(() => { obstaclesRef.current = obstacles; }, [obstacles]);
 
-  const handleJump = () => {
+  const jump = () => {
     setDino(prev => prev.onGround ? { ...prev, vy: -JUMP_FORCE, onGround: false } : prev);
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === " " || e.key === "ArrowUp") {
-      handleJump();
-    }
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === " " || e.key === "ArrowUp") jump();
   };
 
-  const draw = (ctx: CanvasRenderingContext2D, d, o) => {
+  const drawGame = (ctx: CanvasRenderingContext2D, player: Dino, obsArray: Obstacle[]) => {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "yellow";
-    ctx.fillRect(d.x, d.y, DINO_WIDTH, DINO_HEIGHT);
-    ctx.fillStyle = "red";
-    ctx.fillRect(o.x, o.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
+    ctx.fillRect(player.x, player.y, DINO_WIDTH, DINO_HEIGHT);
+    obsArray.forEach(obstacle => {
+      ctx.fillStyle = obstacle.color;
+      if (obstacle.shape === "rect") {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      } else if (obstacle.shape === "circle") {
+        const radius = Math.min(obstacle.width, obstacle.height) / 2;
+        ctx.beginPath();
+        ctx.arc(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2, radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obstacle.shape === "triangle") {
+        ctx.beginPath();
+        ctx.moveTo(obstacle.x, obstacle.y + obstacle.height);
+        ctx.lineTo(obstacle.x + obstacle.width / 2, obstacle.y);
+        ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
+        ctx.closePath();
+        ctx.fill();
+      }
+    });
     if (gameOver) {
       ctx.fillStyle = "white";
       ctx.font = "20px sans-serif";
@@ -54,11 +103,11 @@ export default function DinoGame() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    window.addEventListener("keydown", handleKeyDown);
-    canvas.addEventListener("click", handleJump);
-    const interval = setInterval(() => {
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    window.addEventListener("keydown", onKeyDown);
+    canvas.addEventListener("click", jump);
+    const gameInterval = setInterval(() => {
       if (gameOver || paused) return;
       let newDino = { ...dinoRef.current };
       if (!newDino.onGround) {
@@ -70,27 +119,37 @@ export default function DinoGame() {
           newDino.onGround = true;
         }
       }
-      let newObstacle = { ...obstacleRef.current };
-      newObstacle.x -= 2;
-      if (newObstacle.x < -OBSTACLE_WIDTH) {
-        newObstacle.x = CANVAS_WIDTH;
-      }
-      if (
-        newDino.x < newObstacle.x + OBSTACLE_WIDTH &&
-        newDino.x + DINO_WIDTH > newObstacle.x &&
-        newDino.y < newObstacle.y + OBSTACLE_HEIGHT &&
-        newDino.y + DINO_HEIGHT > newObstacle.y
-      ) {
-        setGameOver(true);
-      }
+      const movedObstacles = obstaclesRef.current.map(ob => ({ ...ob, x: ob.x - OBSTACLE_SPEED }));
+      let rightmostX = Math.max(...movedObstacles.map(ob => ob.x));
+      const updatedObstacles = movedObstacles.map(ob => {
+        if (ob.x < -ob.width) {
+          const gap = randomInt(OBSTACLE_GAP_MIN, OBSTACLE_GAP_MAX);
+          const newX = rightmostX + gap;
+          rightmostX = newX;
+          const newWidth = randomInt(10, DINO_WIDTH * 2);
+          const newHeight = randomInt(10, DINO_HEIGHT * 2);
+          return { ...ob, x: newX, width: newWidth, height: newHeight, y: CANVAS_HEIGHT - newHeight };
+        }
+        return ob;
+      });
+      updatedObstacles.forEach(obs => {
+        if (
+          newDino.x < obs.x + obs.width &&
+          newDino.x + DINO_WIDTH > obs.x &&
+          newDino.y < obs.y + obs.height &&
+          newDino.y + DINO_HEIGHT > obs.y
+        ) {
+          setGameOver(true);
+        }
+      });
       setDino(newDino);
-      setObstacle(newObstacle);
-      draw(ctx, newDino, newObstacle);
+      setObstacles(updatedObstacles);
+      drawGame(context, newDino, updatedObstacles);
     }, 30);
     return () => {
-      clearInterval(interval);
-      window.removeEventListener("keydown", handleKeyDown);
-      canvas.removeEventListener("click", handleJump);
+      clearInterval(gameInterval);
+      window.removeEventListener("keydown", onKeyDown);
+      canvas.removeEventListener("click", jump);
     };
   }, [gameOver, paused]);
 
@@ -98,19 +157,17 @@ export default function DinoGame() {
     if (gameOver) {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      draw(ctx, dinoRef.current, obstacleRef.current);
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      drawGame(context, dinoRef.current, obstaclesRef.current);
     }
   }, [gameOver]);
 
-  const togglePause = () => {
-    setPaused(prev => !prev);
-  };
+  const togglePause = () => setPaused(prev => !prev);
 
-  const restartGame = () => {
+  const resetGame = () => {
     setDino({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true });
-    setObstacle({ x: CANVAS_WIDTH + 100, y: CANVAS_HEIGHT - OBSTACLE_HEIGHT });
+    setObstacles(createObstacles());
     setGameOver(false);
     setPaused(false);
   };
@@ -124,7 +181,7 @@ export default function DinoGame() {
         <button onClick={togglePause} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
           {paused ? "Resume" : "Pause"}
         </button>
-        <button onClick={restartGame} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
+        <button onClick={resetGame} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
           Restart Game
         </button>
       </div>
