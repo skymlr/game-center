@@ -12,6 +12,7 @@ const JUMP_FORCE = 15;
 const OBSTACLE_SPEED = 2;
 const OBSTACLE_GAP_MIN = 100;
 const OBSTACLE_GAP_MAX = OBSTACLE_GAP_MIN * 3;
+const ROTATION_INCREMENT = 0.2;
 
 type Obstacle = {
   x: number;
@@ -27,6 +28,7 @@ type Dino = {
   y: number;
   vy: number;
   onGround: boolean;
+  rotation: number;
 };
 
 function randomInt(min: number, max: number) {
@@ -41,8 +43,8 @@ function createObstacles(): Obstacle[] {
   for (let i = 0; i < shapes.length; i++) {
     const gap = randomInt(OBSTACLE_GAP_MIN, OBSTACLE_GAP_MAX);
     nextX += gap;
-    const width = randomInt(10, 25);
-    const height = randomInt(10, 30);
+    const width = randomInt(10, DINO_WIDTH * 2);
+    const height = randomInt(10, DINO_HEIGHT * 2);
     obstacles.push({ x: nextX, y: CANVAS_HEIGHT - height, width, height, shape: shapes[i], color: colors[i] });
   }
   return obstacles;
@@ -51,7 +53,7 @@ function createObstacles(): Obstacle[] {
 export default function DinoGame() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [dino, setDino] = useState<Dino>({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true });
+  const [dino, setDino] = useState<Dino>({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true, rotation: 0 });
   const [obstacles, setObstacles] = useState<Obstacle[]>(createObstacles());
   const [gameOver, setGameOver] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -72,8 +74,28 @@ export default function DinoGame() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.save();
+    ctx.translate(player.x + DINO_WIDTH / 2, player.y + DINO_HEIGHT / 2);
+    ctx.rotate(player.rotation);
     ctx.fillStyle = "yellow";
-    ctx.fillRect(player.x, player.y, DINO_WIDTH, DINO_HEIGHT);
+    ctx.beginPath();
+    ctx.arc(0, -6, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -2);
+    ctx.lineTo(0, 2);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-6, 0);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(6, 0);
+    ctx.moveTo(0, 2);
+    ctx.lineTo(-4, 10);
+    ctx.moveTo(0, 2);
+    ctx.lineTo(4, 10);
+    ctx.stroke();
+    ctx.restore();
     obsArray.forEach(obstacle => {
       ctx.fillStyle = obstacle.color;
       if (obstacle.shape === "rect") {
@@ -113,10 +135,12 @@ export default function DinoGame() {
       if (!newDino.onGround) {
         newDino.vy += GRAVITY;
         newDino.y += newDino.vy;
+        newDino.rotation += ROTATION_INCREMENT;
         if (newDino.y >= CANVAS_HEIGHT - DINO_HEIGHT) {
           newDino.y = CANVAS_HEIGHT - DINO_HEIGHT;
           newDino.vy = 0;
           newDino.onGround = true;
+          newDino.rotation = 0;
         }
       }
       const movedObstacles = obstaclesRef.current.map(ob => ({ ...ob, x: ob.x - OBSTACLE_SPEED }));
@@ -166,7 +190,7 @@ export default function DinoGame() {
   const togglePause = () => setPaused(prev => !prev);
 
   const resetGame = () => {
-    setDino({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true });
+    setDino({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true, rotation: 0 });
     setObstacles(createObstacles());
     setGameOver(false);
     setPaused(false);
