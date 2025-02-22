@@ -131,7 +131,7 @@ export default function DinoGame() {
     canvas.addEventListener("click", jump);
     const gameInterval = setInterval(() => {
       if (gameOver || paused) return;
-      let newDino = { ...dinoRef.current };
+      const newDino = { ...dinoRef.current };
       if (!newDino.onGround) {
         newDino.vy += GRAVITY;
         newDino.y += newDino.vy;
