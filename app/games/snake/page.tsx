@@ -128,17 +128,17 @@ export default function SnakeGame() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center relative">
-      <button onClick={() => router.back()} className="absolute top-4 left-4 bg-gray-600 text-white px-4 py-2 rounded">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-indigo-900 flex flex-col items-center justify-center relative p-8">
+      <button onClick={() => router.back()} className="absolute top-4 left-4 bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
         Back
       </button>
-      <h2 className="text-2xl text-white mb-4">Snake Game</h2>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-lg rounded" />
+      <h2 className="text-4xl font-extrabold text-white drop-shadow-lg mb-8">Snake Game</h2>
+      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-xl rounded" />
       <div className="absolute top-4 right-4 flex gap-2">
-        <button onClick={togglePause} className="bg-gray-600 text-white px-4 py-2 rounded">
+        <button onClick={togglePause} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
           {paused ? "Resume" : "Pause"}
         </button>
-        <button onClick={restartGame} className="bg-gray-600 text-white px-4 py-2 rounded">
+        <button onClick={restartGame} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
           Restart Game
         </button>
       </div>
