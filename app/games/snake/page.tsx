@@ -13,6 +13,8 @@ export default function SnakeGame() {
   const [snake, setSnake] = useState([{ x: 150, y: 150 }]);
   const [direction, setDirection] = useState({ x: SCALE, y: 0 });
   const [food, setFood] = useState({ x: 0, y: 0 });
+  const [gameOver, setGameOver] = useState(false);
+  const [paused, setPaused] = useState(false);
   const directionRef = useRef(direction);
   const foodRef = useRef(food);
 
@@ -30,7 +32,11 @@ export default function SnakeGame() {
     setFood({ x, y });
   };
 
-  const draw = (ctx: CanvasRenderingContext2D, snakeData: { x: number; y: number }[], foodData: { x: number; y: number }) => {
+  const draw = (
+    ctx: CanvasRenderingContext2D,
+    snakeData: { x: number; y: number }[],
+    foodData: { x: number; y: number }
+  ) => {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "lime";
@@ -39,6 +45,12 @@ export default function SnakeGame() {
     });
     ctx.fillStyle = "red";
     ctx.fillRect(foodData.x, foodData.y, SCALE, SCALE);
+    if (gameOver) {
+      ctx.fillStyle = "white";
+      ctx.font = "20px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Game Over", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    }
   };
 
   useEffect(() => {
@@ -48,11 +60,22 @@ export default function SnakeGame() {
     if (!ctx) return;
     generateFood();
     const interval = setInterval(() => {
+      if (gameOver || paused) return;
       setSnake((prevSnake) => {
-        const newHead = {
+        let newHead = {
           x: prevSnake[0].x + directionRef.current.x,
           y: prevSnake[0].y + directionRef.current.y,
         };
+        if (newHead.x < 0) newHead.x = CANVAS_WIDTH - SCALE;
+        else if (newHead.x >= CANVAS_WIDTH) newHead.x = 0;
+        if (newHead.y < 0) newHead.y = CANVAS_HEIGHT - SCALE;
+        else if (newHead.y >= CANVAS_HEIGHT) newHead.y = 0;
+        for (let part of prevSnake) {
+          if (newHead.x === part.x && newHead.y === part.y) {
+            setGameOver(true);
+            return prevSnake;
+          }
+        }
         let newSnake = [newHead, ...prevSnake];
         if (newHead.x === foodRef.current.x && newHead.y === foodRef.current.y) {
           generateFood();
@@ -68,7 +91,17 @@ export default function SnakeGame() {
       clearInterval(interval);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [gameOver, paused]);
+
+  useEffect(() => {
+    if (gameOver) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      draw(ctx, snake, food);
+    }
+  }, [gameOver]);
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowUp" && directionRef.current.y === 0) {
@@ -82,13 +115,33 @@ export default function SnakeGame() {
     }
   };
 
+  const togglePause = () => {
+    setPaused((prev) => !prev);
+  };
+
+  const restartGame = () => {
+    setSnake([{ x: 150, y: 150 }]);
+    setDirection({ x: SCALE, y: 0 });
+    setGameOver(false);
+    setPaused(false);
+    generateFood();
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center relative">
       <button onClick={() => router.back()} className="absolute top-4 left-4 bg-gray-600 text-white px-4 py-2 rounded">
         Back
       </button>
       <h2 className="text-2xl text-white mb-4">Snake Game</h2>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white" />
+      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-lg rounded" />
+      <div className="absolute top-4 right-4 flex gap-2">
+        <button onClick={togglePause} className="bg-gray-600 text-white px-4 py-2 rounded">
+          {paused ? "Resume" : "Pause"}
+        </button>
+        <button onClick={restartGame} className="bg-gray-600 text-white px-4 py-2 rounded">
+          Restart Game
+        </button>
+      </div>
     </div>
   );
 }

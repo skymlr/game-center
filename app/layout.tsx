@@ -1,3 +1,5 @@
+import "./globals.css"
+
 export const metadata = {
   title: 'Game Center',
   description: 'A collection of simple games for a mobile-first experience',
