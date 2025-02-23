@@ -59,7 +59,7 @@ export default function SnakeGame() {
     const interval = setInterval(() => {
       if (gameOver || paused) return;
       setSnake((prevSnake) => {
-        let newHead = {
+        const newHead = {
           x: prevSnake[0].x + directionRef.current.x,
           y: prevSnake[0].y + directionRef.current.y,
         };
@@ -67,13 +67,13 @@ export default function SnakeGame() {
         else if (newHead.x >= CANVAS_WIDTH) newHead.x = 0;
         if (newHead.y < 0) newHead.y = CANVAS_HEIGHT - SCALE;
         else if (newHead.y >= CANVAS_HEIGHT) newHead.y = 0;
-        for (let part of prevSnake) {
+        for (const part of prevSnake) {
           if (newHead.x === part.x && newHead.y === part.y) {
             setGameOver(true);
             return prevSnake;
           }
         }
-        let newSnake = [newHead, ...prevSnake];
+        const newSnake = [newHead, ...prevSnake];
         if (newHead.x === foodRef.current.x && newHead.y === foodRef.current.y) {
           generateFood();
         } else {

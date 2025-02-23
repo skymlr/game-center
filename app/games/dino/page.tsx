@@ -131,7 +131,7 @@ export default function DinoGame() {
     canvas.addEventListener("click", jump);
     const gameInterval = setInterval(() => {
       if (gameOver || paused) return;
-      let newDino = { ...dinoRef.current };
+      const newDino = { ...dinoRef.current };
       if (!newDino.onGround) {
         newDino.vy += GRAVITY;
         newDino.y += newDino.vy;
@@ -218,6 +218,11 @@ export default function DinoGame() {
           </button>
         </div>
       </div>
+      <h2 className="text-4xl font-extrabold text-white drop-shadow-lg mb-8">Dino Run</h2>
+      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-xl rounded" />
+      <button onClick={jump} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white mt-8 px-4 py-2 rounded shadow-xl">
+        Jump
+      </button>
     </div>
   );
 }
