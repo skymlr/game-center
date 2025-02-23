@@ -9,7 +9,7 @@ const DINO_WIDTH = 20;
 const DINO_HEIGHT = 20;
 const GRAVITY = 1;
 const JUMP_FORCE = 15;
-const OBSTACLE_SPEED = 2;
+const OBSTACLE_SPEED = 4;
 const OBSTACLE_GAP_MIN = 100;
 const OBSTACLE_GAP_MAX = OBSTACLE_GAP_MIN * 3;
 const ROTATION_INCREMENT = 0.2;
@@ -43,8 +43,8 @@ function createObstacles(): Obstacle[] {
   for (let i = 0; i < shapes.length; i++) {
     const gap = randomInt(OBSTACLE_GAP_MIN, OBSTACLE_GAP_MAX);
     nextX += gap;
-    const width = randomInt(10, DINO_WIDTH * 2);
-    const height = randomInt(10, DINO_HEIGHT * 2);
+    const width = randomInt(10, DINO_WIDTH);
+    const height = randomInt(10, DINO_HEIGHT);
     obstacles.push({ x: nextX, y: CANVAS_HEIGHT - height, width, height, shape: shapes[i], color: colors[i] });
   }
   return obstacles;
@@ -131,7 +131,7 @@ export default function DinoGame() {
     canvas.addEventListener("click", jump);
     const gameInterval = setInterval(() => {
       if (gameOver || paused) return;
-      const newDino = { ...dinoRef.current };
+      let newDino = { ...dinoRef.current };
       if (!newDino.onGround) {
         newDino.vy += GRAVITY;
         newDino.y += newDino.vy;
@@ -218,11 +218,6 @@ export default function DinoGame() {
           </button>
         </div>
       </div>
-      <h2 className="text-4xl font-extrabold text-white drop-shadow-lg mb-8">Dino Run</h2>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-xl rounded" />
-      <button onClick={jump} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white mt-8 px-4 py-2 rounded shadow-xl">
-        Jump
-      </button>
     </div>
   );
 }
