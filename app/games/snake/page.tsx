@@ -17,7 +17,7 @@ export default function SnakeGame() {
   const [paused, setPaused] = useState(false);
   const directionRef = useRef(direction);
   const foodRef = useRef(food);
-  const touchStartRef = useRef<globalThis.Touch | null>(null);
+  const touchStartRef = useRef<Pick<Touch, "clientX" | "clientY"> | null>(null);
 
   useEffect(() => {
     directionRef.current = direction;
@@ -125,11 +125,11 @@ export default function SnakeGame() {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartRef.current = e.touches[0];
+    touchStartRef.current = { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const touchEnd = e.changedTouches[0];
+    const touchEnd = { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
     if (!touchStartRef.current) return;
     const deltaX = touchEnd.clientX - touchStartRef.current.clientX;
     const deltaY = touchEnd.clientY - touchStartRef.current.clientY;
