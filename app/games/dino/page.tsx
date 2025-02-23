@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 const CANVAS_WIDTH = 300;
@@ -62,15 +62,15 @@ export default function DinoGame() {
   useEffect(() => { dinoRef.current = dino; }, [dino]);
   useEffect(() => { obstaclesRef.current = obstacles; }, [obstacles]);
 
-  const jump = () => {
+  const jump = useCallback(() => {
     setDino(prev => prev.onGround ? { ...prev, vy: -JUMP_FORCE, onGround: false } : prev);
-  };
+  }, []);
 
-  const onKeyDown = (e: KeyboardEvent) => {
+  const onKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === " " || e.key === "ArrowUp") jump();
-  };
+  }, [jump]);
 
-  const drawGame = (ctx: CanvasRenderingContext2D, player: Dino, obsArray: Obstacle[]) => {
+  const drawGame = useCallback((ctx: CanvasRenderingContext2D, player: Dino, obsArray: Obstacle[]) => {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -120,7 +120,7 @@ export default function DinoGame() {
       ctx.textAlign = "center";
       ctx.fillText("Game Over", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     }
-  };
+  }, [gameOver]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -131,7 +131,7 @@ export default function DinoGame() {
     canvas.addEventListener("click", jump);
     const gameInterval = setInterval(() => {
       if (gameOver || paused) return;
-      let newDino = { ...dinoRef.current };
+      const newDino = { ...dinoRef.current };
       if (!newDino.onGround) {
         newDino.vy += GRAVITY;
         newDino.y += newDino.vy;
@@ -175,7 +175,7 @@ export default function DinoGame() {
       window.removeEventListener("keydown", onKeyDown);
       canvas.removeEventListener("click", jump);
     };
-  }, [gameOver, paused]);
+  }, [gameOver, paused, drawGame, onKeyDown, jump]);
 
   useEffect(() => {
     if (gameOver) {
@@ -185,7 +185,7 @@ export default function DinoGame() {
       if (!context) return;
       drawGame(context, dinoRef.current, obstaclesRef.current);
     }
-  }, [gameOver]);
+  }, [gameOver, drawGame]);
 
   const togglePause = () => setPaused(prev => !prev);
   const resetGame = () => {

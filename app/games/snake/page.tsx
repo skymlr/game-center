@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 const CANVAS_WIDTH = 300;
@@ -27,13 +27,13 @@ export default function SnakeGame() {
     foodRef.current = food;
   }, [food]);
 
-  const generateFood = () => {
+  const generateFood = useCallback(() => {
     const x = Math.floor(Math.random() * (CANVAS_WIDTH / SCALE)) * SCALE;
     const y = Math.floor(Math.random() * (CANVAS_HEIGHT / SCALE)) * SCALE;
     setFood({ x, y });
-  };
+  }, []);
 
-  const draw = (ctx: CanvasRenderingContext2D, snakeData: { x: number; y: number }[], foodData: { x: number; y: number }) => {
+  const draw = useCallback((ctx: CanvasRenderingContext2D, snakeData: { x: number; y: number }[], foodData: { x: number; y: number }) => {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "lime";
@@ -48,7 +48,19 @@ export default function SnakeGame() {
       ctx.textAlign = "center";
       ctx.fillText("Game Over", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
     }
-  };
+  }, [gameOver]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "ArrowUp" && directionRef.current.y === 0) {
+      setDirection({ x: 0, y: -SCALE });
+    } else if (e.key === "ArrowDown" && directionRef.current.y === 0) {
+      setDirection({ x: 0, y: SCALE });
+    } else if (e.key === "ArrowLeft" && directionRef.current.x === 0) {
+      setDirection({ x: -SCALE, y: 0 });
+    } else if (e.key === "ArrowRight" && directionRef.current.x === 0) {
+      setDirection({ x: SCALE, y: 0 });
+    }
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -88,7 +100,7 @@ export default function SnakeGame() {
       clearInterval(interval);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [gameOver, paused]);
+  }, [gameOver, paused, draw, generateFood, handleKeyDown]);
 
   useEffect(() => {
     if (gameOver) {
@@ -98,19 +110,7 @@ export default function SnakeGame() {
       if (!ctx) return;
       draw(ctx, snake, food);
     }
-  }, [gameOver]);
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "ArrowUp" && directionRef.current.y === 0) {
-      setDirection({ x: 0, y: -SCALE });
-    } else if (e.key === "ArrowDown" && directionRef.current.y === 0) {
-      setDirection({ x: 0, y: SCALE });
-    } else if (e.key === "ArrowLeft" && directionRef.current.x === 0) {
-      setDirection({ x: -SCALE, y: 0 });
-    } else if (e.key === "ArrowRight" && directionRef.current.x === 0) {
-      setDirection({ x: SCALE, y: 0 });
-    }
-  };
+  }, [gameOver, draw, snake, food]);
 
   const changeDirection = (dir: "up" | "down" | "left" | "right") => {
     if (dir === "up" && directionRef.current.y === 0) {
@@ -150,7 +150,7 @@ export default function SnakeGame() {
   };
 
   const togglePause = () => {
-    setPaused((prev) => !prev);
+    setPaused(prev => !prev);
   };
 
   const restartGame = () => {
