@@ -17,6 +17,7 @@ export default function SnakeGame() {
   const [paused, setPaused] = useState(false);
   const directionRef = useRef(direction);
   const foodRef = useRef(food);
+  const touchStartRef = useRef<globalThis.Touch | null>(null);
 
   useEffect(() => {
     directionRef.current = direction;
@@ -32,11 +33,7 @@ export default function SnakeGame() {
     setFood({ x, y });
   };
 
-  const draw = (
-    ctx: CanvasRenderingContext2D,
-    snakeData: { x: number; y: number }[],
-    foodData: { x: number; y: number }
-  ) => {
+  const draw = (ctx: CanvasRenderingContext2D, snakeData: { x: number; y: number }[], foodData: { x: number; y: number }) => {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = "lime";
@@ -115,6 +112,43 @@ export default function SnakeGame() {
     }
   };
 
+  const changeDirection = (dir: "up" | "down" | "left" | "right") => {
+    if (dir === "up" && directionRef.current.y === 0) {
+      setDirection({ x: 0, y: -SCALE });
+    } else if (dir === "down" && directionRef.current.y === 0) {
+      setDirection({ x: 0, y: SCALE });
+    } else if (dir === "left" && directionRef.current.x === 0) {
+      setDirection({ x: -SCALE, y: 0 });
+    } else if (dir === "right" && directionRef.current.x === 0) {
+      setDirection({ x: SCALE, y: 0 });
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = e.touches[0];
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchEnd = e.changedTouches[0];
+    if (!touchStartRef.current) return;
+    const deltaX = touchEnd.clientX - touchStartRef.current.clientX;
+    const deltaY = touchEnd.clientY - touchStartRef.current.clientY;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX > 0) {
+        changeDirection("right");
+      } else {
+        changeDirection("left");
+      }
+    } else {
+      if (deltaY > 0) {
+        changeDirection("down");
+      } else {
+        changeDirection("up");
+      }
+    }
+    touchStartRef.current = null;
+  };
+
   const togglePause = () => {
     setPaused((prev) => !prev);
   };
@@ -128,19 +162,40 @@ export default function SnakeGame() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-indigo-900 flex flex-col items-center justify-center relative p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-indigo-900 relative p-8" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <button onClick={() => router.back()} className="absolute top-4 left-4 bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
         Back
       </button>
-      <h2 className="text-4xl font-extrabold text-white drop-shadow-lg mb-8">Snake Game</h2>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-xl rounded" />
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button onClick={togglePause} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
-          {paused ? "Resume" : "Pause"}
-        </button>
-        <button onClick={restartGame} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
-          Restart Game
-        </button>
+      <div className="bg-gray-800 rounded-3xl p-6 shadow-2xl w-[350px]">
+        <div className="bg-black border-4 border-gray-900 rounded-lg p-2">
+          <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="w-full" />
+        </div>
+        <div className="mt-2 flex flex-col">
+          <div className="flex gap-4 mb-4">
+            <button onClick={togglePause} className="p-4 text-lg">
+              {paused ? "▶️" : "⏸️"}
+            </button>
+            <button onClick={restartGame} className="p-4 text-lg">
+              🔄
+            </button>
+          </div>
+          <div className="flex flex-col items-center">
+            <button onClick={() => changeDirection("up")} className="bg-gray-800 border-2 border-gray-500 rounded-full w-16 h-16 text-white text-2xl shadow-lg">
+              ▲
+            </button>
+            <div className="flex items-center justify-center mt-1 mb-1">
+              <button onClick={() => changeDirection("left")} className="bg-gray-800 border-2 border-gray-500 rounded-full w-16 h-16 text-white text-2xl shadow-lg mr-8">
+                ◀
+              </button>
+              <button onClick={() => changeDirection("right")} className="bg-gray-800 border-2 border-gray-500 rounded-full w-16 h-16 text-white text-2xl shadow-lg ml-8">
+                ▶
+              </button>
+            </div>
+            <button onClick={() => changeDirection("down")} className="bg-gray-800 border-2 border-gray-500 rounded-full w-16 h-16 text-white text-2xl shadow-lg">
+              ▼
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

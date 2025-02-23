@@ -188,7 +188,6 @@ export default function DinoGame() {
   }, [gameOver]);
 
   const togglePause = () => setPaused(prev => !prev);
-
   const resetGame = () => {
     setDino({ x: 30, y: CANVAS_HEIGHT - DINO_HEIGHT, vy: 0, onGround: true, rotation: 0 });
     setObstacles(createObstacles());
@@ -197,20 +196,28 @@ export default function DinoGame() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-indigo-900 flex flex-col items-center justify-center relative p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-indigo-900 relative p-8">
       <button onClick={() => router.back()} className="absolute top-4 left-4 bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
         Back
       </button>
-      <div className="absolute top-4 right-4 flex gap-2">
-        <button onClick={togglePause} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
-          {paused ? "Resume" : "Pause"}
-        </button>
-        <button onClick={resetGame} className="bg-gray-600 hover:bg-gray-700 transition-all duration-300 text-white px-4 py-2 rounded shadow-xl">
-          Restart Game
-        </button>
+      <div className="bg-gray-800 rounded-3xl p-6 shadow-2xl w-[350px]">
+        <div className="bg-black border-4 border-gray-900 rounded-lg p-2">
+          <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="w-full" />
+        </div>
+        <div className="mt-2 flex flex-col items-center">
+          <div className="flex gap-4 mb-4">
+            <button onClick={togglePause} className="p-4 text-lg">
+              {paused ? "▶️" : "⏸️"}
+            </button>
+            <button onClick={resetGame} className="p-4 text-lg">
+              🔄
+            </button>
+          </div>
+          <button onClick={jump} className="bg-gray-800 border-2 border-gray-500 rounded-full w-16 h-16 text-white text-2xl shadow-lg">
+              ▲
+          </button>
+        </div>
       </div>
-      <h2 className="text-4xl font-extrabold text-white drop-shadow-lg mb-8">Dino Run</h2>
-      <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="border-2 border-white shadow-xl rounded" />
     </div>
   );
 }
