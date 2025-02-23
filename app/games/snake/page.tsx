@@ -20,6 +20,12 @@ export default function SnakeGame() {
   const touchStartRef = useRef<Pick<Touch, "clientX" | "clientY"> | null>(null);
 
   useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = originalOverflow; };
+  }, []);
+
+  useEffect(() => {
     directionRef.current = direction;
   }, [direction]);
 
@@ -134,17 +140,9 @@ export default function SnakeGame() {
     const deltaX = touchEnd.clientX - touchStartRef.current.clientX;
     const deltaY = touchEnd.clientY - touchStartRef.current.clientY;
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX > 0) {
-        changeDirection("right");
-      } else {
-        changeDirection("left");
-      }
+      deltaX > 0 ? changeDirection("right") : changeDirection("left");
     } else {
-      if (deltaY > 0) {
-        changeDirection("down");
-      } else {
-        changeDirection("up");
-      }
+      deltaY > 0 ? changeDirection("down") : changeDirection("up");
     }
     touchStartRef.current = null;
   };
