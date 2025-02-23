@@ -3,7 +3,8 @@
     "short_name": "GameCenter",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
+    "background_color": "#1a202c",
+    "theme_color": "#1a202c",
     "description": "A collection of simple games for a mobile-first experience",
     "icons": [
       {
