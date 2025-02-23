@@ -139,13 +139,23 @@ export default function SnakeGame() {
     if (!touchStartRef.current) return;
     const deltaX = touchEnd.clientX - touchStartRef.current.clientX;
     const deltaY = touchEnd.clientY - touchStartRef.current.clientY;
+
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      deltaX > 0 ? changeDirection("right") : changeDirection("left");
+        if (deltaX > 0) {
+            changeDirection("right");
+        } else {
+            changeDirection("left");
+        }
     } else {
-      deltaY > 0 ? changeDirection("down") : changeDirection("up");
+        if (deltaY > 0) {
+            changeDirection("down");
+        } else {
+            changeDirection("up");
+        }
     }
+    
     touchStartRef.current = null;
-  };
+};
 
   const togglePause = () => {
     setPaused(prev => !prev);
